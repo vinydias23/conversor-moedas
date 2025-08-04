@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Moedas Profissional</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #f8fafc;
+            --accent-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .converter-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--shadow-large);
+            position: relative;
+        }
+
+        .converter-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .language-selector {
+            position: relative;
+            display: inline-block;
+            margin-top: 15px;
+            z-index: 1000;
+        }
+
+        .selected-language {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--secondary-color);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            min-width: 140px;
+            justify-content: space-between;
+        }
+
+        .selected-language:hover {
+            border-color: var(--primary-color);
+            background: white;
+        }
+
+        .language-selector.open .selected-language {
+            border-color: var(--primary-color);
+            background: white;
+        }
+
+        .flag {
+            width: 20px;
+            height: 15px;
+            border-radius: 2px;
+            object-fit: cover;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .arrow {
+            transition: transform 0.2s ease;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .language-selector.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-medium);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            z-index: 10001;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+        }
+
+        .dropdown::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .dropdown::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        .language-selector.open .dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .language-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .language-option:last-child {
+            border-bottom: none;
+        }
+
+        .language-option:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .language-option.selected {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(16, 185, 129, 0.1));
+            color: var(--primary-color);
+            font-weight: 500;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .currency-section {
+            margin-bottom: 30px;
+        }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .input-container {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .amount-input {
+            position: relative;
+        }
+
+        .amount-input input {
+            width: 100%;
+            padding: 20px 24px;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: var(--secondary-color);
+            transition: all 0.2s ease;
+        }
+
+        .amount-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .currency-select {
+            position: relative;
+        }
+
+        .currency-select select {
+            appearance: none;
+            padding: 20px 50px 20px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 180px;
+        }
+
+        .currency-select select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .currency-select::after {
+            content: '▼';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.8rem;
+        }
+
+        .swap-section {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
+        }
+
+        .swap-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-medium);
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .swap-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+            box-shadow: var(--shadow-large);
+        }
+
+        .result-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-top: 30px;
+            text-align: center;
+            transform: translateY(10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .result-section.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .result-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .result-rate {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .info-card h3 {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .rate-item:last-child {
+            border-bottom: none;
+        }
+
+        .rate-currency {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .rate-value {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            animation: pulse 2s infinite;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .error {
+            background: var(--error-color);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* RTL Support for Arabic */
+        [lang="ar-SA"] {
+            direction: rtl;
+            text-align: right;
+        }
+
+        [lang="ar-SA"] .input-container {
+            direction: rtl;
+        }
+
+        [lang="ar-SA"] .section-label {
+            flex-direction: row-reverse;
+        }
+
+        [lang="ar-SA"] .selected-language {
+            flex-direction: row-reverse;
+        }
+
+        [lang="ar-SA"] .language-option {
+            flex-direction: row-reverse;
+        }
+
+        [lang="ar-SA"] .currency-select::after {
+            left: 15px;
+            right: auto;
+        }
+
+        [lang="ar-SA"] .language-option.selected {
+            border-left: none;
+            border-right: 3px solid var(--primary-color);
+        }
+
+        /* Fonts for different languages */
+        [lang="ja-JP"] {
+            font-family: 'Inter', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+        }
+
+        [lang="zh-CN"] {
+            font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        [lang="ru-RU"] {
+            font-family: 'Inter', 'Roboto', 'PT Sans', sans-serif;
+        }
+
+        [lang="ar-SA"] {
+            font-family: 'Inter', 'Noto Sans Arabic', 'Tahoma', sans-serif;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .converter-card {
+                padding: 25px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .input-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .currency-select select {
+                width: 100%;
+            }
+
+            .dropdown {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 90vw;
+                max-width: 300px;
+                max-height: 70vh;
+                z-index: 99999;
+            }
+
+            .language-selector.open::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 99998;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="converter-card">
+            <div class="header">
+                <h1 id="mainTitle">Conversor de Moedas Profissional</h1>
+                <p id="mainSubtitle">com cotações em tempo real</p>
+                
+                <div class="language-selector" id="languageSelector">
+                    <div class="selected-language" id="selectedLanguage">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img class="flag" src="https://flagcdn.com/w40/br.png" alt="Brasil" id="selectedFlag">
+                            <span class="text">Português</span>
+                        </div>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="dropdown" id="dropdown">
+                        <div class="language-option selected" data-lang="pt" data-flag="https://flagcdn.com/w40/br.png" data-text="Português">
+                            <img class="flag" src="https://flagcdn.com/w40/br.png" alt="Brasil">
+                            <span class="text">Português</span>
+                        </div>
+                        <div class="language-option" data-lang="en" data-flag="https://flagcdn.com/w40/us.png" data-text="English">
+                            <img class="flag" src="https://flagcdn.com/w40/us.png" alt="United States">
+                            <span class="text">English</span>
+                        </div>
+                        <div class="language-option" data-lang="es" data-flag="https://flagcdn.com/w40/es.png" data-text="Español">
+                            <img class="flag" src="https://flagcdn.com/w40/es.png" alt="España">
+                            <span class="text">Español</span>
+                        </div>
+                        <div class="language-option" data-lang="fr" data-flag="https://flagcdn.com/w40/fr.png" data-text="Français">
+                            <img class="flag" src="https://flagcdn.com/w40/fr.png" alt="France">
+                            <span class="text">Français</span>
+                        </div>
+                        <div class="language-option" data-lang="de" data-flag="https://flagcdn.com/w40/de.png" data-text="Deutsch">
+                            <img class="flag" src="https://flagcdn.com/w40/de.png" alt="Deutschland">
+                            <span class="text">Deutsch</span>
+                        </div>
+                        <div class="language-option" data-lang="it" data-flag="https://flagcdn.com/w40/it.png" data-text="Italiano">
+                            <img class="flag" src="https://flagcdn.com/w40/it.png" alt="Italia">
+                            <span class="text">Italiano</span>
+                        </div>
+                        <div class="language-option" data-lang="ja" data-flag="https://flagcdn.com/w40/jp.png" data-text="日本語">
+                            <img class="flag" src="https://flagcdn.com/w40/jp.png" alt="Japan">
+                            <span class="text">日本語</span>
+                        </div>
+                        <div class="language-option" data-lang="zh" data-flag="https://flagcdn.com/w40/cn.png" data-text="中文">
+                            <img class="flag" src="https://flagcdn.com/w40/cn.png" alt="China">
+                            <span class="text">中文</span>
+                        </div>
+                        <div class="language-option" data-lang="ru" data-flag="https://flagcdn.com/w40/ru.png" data-text="Русский">
+                            <img class="flag" src="https://flagcdn.com/w40/ru.png" alt="Russia">
+                            <span class="text">Русский</span>
+                        </div>
+                        <div class="language-option" data-lang="ar" data-flag="https://flagcdn.com/w40/sa.png" data-text="العربية">
+                            <img class="flag" src="https://flagcdn.com/w40/sa.png" alt="Saudi Arabia">
+                            <span class="text">العربية</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="currency-section">
+                <div class="section-label">
+                    <span>💰</span>
+                    <span id="labelFrom">De</span>
+                </div>
+                <div class="input-container">
+                    <div class="amount-input">
+                        <input type="number" id="fromAmount" value="1" min="0" step="0.01" placeholder="0.00" aria-label="Valor de origem">
+                    </div>
+                    <div class="currency-select">
+                        <select id="fromCurrency" aria-label="Moeda de origem">
+                            <option value="BRL">BRL - Real Brasileiro</option>
+                            <option value="USD">USD - Dólar Americano</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - Libra Esterlina</option>
+                            <option value="JPY">JPY - Iene Japonês</option>
+                            <option value="CAD">CAD - Dólar Canadense</option>
+                            <option value="AUD">AUD - Dólar Australiano</option>
+                            <option value="CHF">CHF - Franco Suíço</option>
+                            <option value="CNY">CNY - Yuan Chinês</option>
+                            <option value="ARS">ARS - Peso Argentino</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="swap-section">
+                <button class="swap-btn" onclick="swapCurrencies()" title="Trocar moedas" aria-label="Trocar moedas">
+                    ⇅
+                </button>
+            </div>
+
+            <div class="currency-section">
+                <div class="section-label">
+                    <span>💎</span>
+                    <span id="labelTo">Para</span>
+                </div>
+                <div class="input-container">
+                    <div class="amount-input">
+                        <input type="number" id="toAmount" readonly placeholder="0.00" aria-label="Valor convertido">
+                    </div>
+                    <div class="currency-select">
+                        <select id="toCurrency" aria-label="Moeda de destino">
+                            <option value="USD">USD - Dólar Americano</option>
+                            <option value="BRL">BRL - Real Brasileiro</option>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="GBP">GBP - Libra Esterlina</option>
+                            <option value="JPY">JPY - Iene Japonês</option>
+                            <option value="CAD">CAD - Dólar Canadense</option>
+                            <option value="AUD">AUD - Dólar Australiano</option>
+                            <option value="CHF">CHF - Franco Suíço</option>
+                            <option value="CNY">CNY - Yuan Chinês</option>
+                            <option value="ARS">ARS - Peso Argentino</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-section" id="result"></div>
+            
+            <div class="loading" id="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span id="loadingText">Carregando cotações...</span>
+            </div>
+            
+            <div class="error" id="error"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="info-card">
+                <h3 id="popularTitle">📊 Cotações Populares</h3>
+                <div id="popularRates"></div>
+            </div>
+            
+            <div class="info-card">
+                <h3 id="statusTitle">⚡ Status</h3>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="statusText">Conectado - Tempo real</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary);" id="lastUpdate">
+                    Última atualização: Carregando...
+                </div>
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--primary-color); font-weight: 500;" id="localTime">
+                    🕐 Horário local: Carregando...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado global da aplicação
+        let exchangeRates = {};
+        let baseCurrency = 'USD';
+        let lastUpdateTime = null;
+        let currentLanguage = 'pt';
+        let timeInterval;
+        let updateInterval;
+
+        // Configurações de fusos horários
+        const timeZones = {
+            'pt': { zone: 'America/Sao_Paulo', country: 'Brasil', flag: '🇧🇷' },
+            'en': { zone: 'America/New_York', country: 'Estados Unidos', flag: '🇺🇸' },
+            'es': { zone: 'Europe/Madrid', country: 'Espanha', flag: '🇪🇸' },
+            'fr': { zone: 'Europe/Paris', country: 'França', flag: '🇫🇷' },
+            'de': { zone: 'Europe/Berlin', country: 'Alemanha', flag: '🇩🇪' },
+            'it': { zone: 'Europe/Rome', country: 'Itália', flag: '🇮🇹' },
+            'ja': { zone: 'Asia/Tokyo', country: 'Japão', flag: '🇯🇵' },
+            'zh': { zone: 'Asia/Shanghai', country: 'China', flag: '🇨🇳' },
+            'ru': { zone: 'Europe/Moscow', country: 'Rússia', flag: '🇷🇺' },
+            'ar': { zone: 'Asia/Riyadh', country: 'Arábia Saudita', flag: '🇸🇦' }
+        };
+
+        // Classe para gerenciar o seletor de idiomas
+        class LanguageSelector {
+            constructor(selectorId) {
+                this.selector = document.getElementById(selectorId);
+                this.selectedLanguage = this.selector.querySelector('#selectedLanguage');
+                this.dropdown = this.selector.querySelector('#dropdown');
+                this.options = this.selector.querySelectorAll('.language-option');
+                this.init();
+            }
+
+            init() {
+                this.selectedLanguage.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleDropdown();
+                });
+
+                this.options.forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.selectLanguage(option);
+                    });
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!this.selector.contains(e.target)) {
+                        this.closeDropdown();
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') {
+                        this.closeDropdown();
+                    }
+                });
+            }
+
+            toggleDropdown() {
+                this.selector.classList.toggle('open');
+            }
+
+            closeDropdown() {
+                this.selector.classList.remove('open');
+            }
+
+            selectLanguage(option) {
+                this.options.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+
+                const flagUrl = option.dataset.flag;
+                const text = option.dataset.text;
+                const lang = option.dataset.lang;
+
+                const selectedFlag = document.getElementById('selectedFlag');
+                selectedFlag.src = flagUrl;
+                selectedFlag.alt = text;
+                this.selectedLanguage.querySelector('.text').textContent = text;
+
+                this.closeDropdown();
+                this.onLanguageChange(lang, text, flagUrl);
+            }
+
+            onLanguageChange(lang, text, flagUrl) {
+                currentLanguage = lang;
+                setLanguage(lang);
+                
+                // Salvar preferência no localStorage
+                try {
+                    localStorage.setItem('selectedLanguage', lang);
+                    localStorage.setItem('selectedLanguageText', text);
+                    localStorage.setItem('selectedLanguageFlag', flagUrl);
+                } catch (e) {
+                    console.warn('localStorage não disponível:', e);
+                }
+
+                updateUI();
+                updatePopularRates();
+                updateLocalTime();
+                startTimeUpdate();
+            }
+
+            restoreSavedLanguage() {
+                try {
+                    const savedLang = localStorage.getItem('selectedLanguage');
+                    const savedText = localStorage.getItem('selectedLanguageText');
+                    const savedFlag = localStorage.getItem('selectedLanguageFlag');
+                    
+                    if (savedLang && savedText && savedFlag) {
+                        const option = this.selector.querySelector(`[data-lang="${savedLang}"]`);
+                        if (option) {
+                            this.options.forEach(opt => opt.classList.remove('selected'));
+                            option.classList.add('selected');
+                            
+                            const selectedFlag = document.getElementById('selectedFlag');
+                            selectedFlag.src = savedFlag;
+                            selectedFlag.alt = savedText;
+                            this.selectedLanguage.querySelector('.text').textContent = savedText;
+                            
+                            currentLanguage = savedLang;
+                            setLanguage(savedLang);
+                            updateLocalTime();
+                            startTimeUpdate();
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Erro ao restaurar idioma:', e);
+                }
+            }
+        }
+
+        // Buscar cotações da API
+        async function fetchExchangeRates() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const statusText = document.getElementById('statusText');
+            
+            loading.style.display = 'flex';
+            error.style.display = 'none';
+            statusText.textContent = translations[currentLanguage].statusUpdating;
+            
+            try {
+                const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.rates) {
+                    throw new Error('Formato de dados inválido');
+                }
+                
+                exchangeRates = data.rates;
+                exchangeRates[baseCurrency] = 1;
+                lastUpdateTime = new Date();
+                
+                updateUI();
+                updatePopularRates();
+                updateStatus(translations[currentLanguage].statusConnected, true);
+                
+            } catch (err) {
+                console.error('Erro na API principal:', err);
+                await tryAlternativeAPI();
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Tentar API alternativa
+        async function tryAlternativeAPI() {
+            try {
+                const backupRates = await fetch('https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/usd.json');
+                
+                if (backupRates.ok) {
+                    const data = await backupRates.json();
+                    
+                    exchangeRates = {
+                        USD: 1,
+                        BRL: data.usd?.brl || 5.30,
+                        EUR: data.usd?.eur || 0.92,
+                        GBP: data.usd?.gbp || 0.79,
+                        JPY: data.usd?.jpy || 149.50,
+                        CAD: data.usd?.cad || 1.36,
+                        AUD: data.usd?.aud || 1.52,
+                        CHF: data.usd?.chf || 0.88,
+                        CNY: data.usd?.cny || 7.23,
+                        ARS: data.usd?.ars || 365.50
+                    };
+                    
+                    lastUpdateTime = new Date();
+                    updateUI();
+                    updatePopularRates();
+                    updateStatus(translations[currentLanguage].statusAlt, true);
+                    
+                } else {
+                    throw new Error('API alternativa falhou');
+                }
+                
+            } catch (err) {
+                console.error('Erro na API alternativa:', err);
+                useOfflineRates();
+            }
+        }
+
+        // Usar taxas offline como último recurso
+        function useOfflineRates() {
+            const error = document.getElementById('error');
+            
+            exchangeRates = {
+                USD: 1, BRL: 5.32, EUR: 0.92, GBP: 0.79, JPY: 149.15,
+                CAD: 1.36, AUD: 1.51, CHF: 0.88, CNY: 7.24, ARS: 368.75
+            };
+            
+            lastUpdateTime = new Date();
+            updateUI();
+            updatePopularRates();
+            updateStatus(translations[currentLanguage].statusOffline, false);
+            
+            error.textContent = translations[currentLanguage].errorOffline;
+            error.style.display = 'block';
+        }
+
+        // Atualizar interface
+        function updateUI() {
+            convertCurrency();
+            
+            const lastUpdate = document.getElementById('lastUpdate');
+            if (lastUpdateTime) {
+                const locale = getLocaleForLanguage(currentLanguage);
+                const dateStr = lastUpdateTime.toLocaleString(locale);
+                lastUpdate.textContent = `${translations[currentLanguage].lastUpdate}: ${dateStr}`;
+            }
+        }
+
+        // Atualizar status
+        function updateStatus(text, isOnline) {
+            const statusText = document.getElementById('statusText');
+            const statusDot = document.querySelector('.status-dot');
+            
+            statusText.textContent = text;
+            statusDot.style.background = isOnline ? 'var(--accent-color)' : 'var(--warning-color)';
+        }
+
+        // Atualizar cotações populares
+        function updatePopularRates() {
+            const container = document.getElementById('popularRates');
+            const popularPairs = [
+                { from: 'USD', to: 'BRL' },
+                { from: 'EUR', to: 'BRL' },
+                { from: 'BRL', to: 'USD' },
+                { from: 'GBP', to: 'USD' }
+            ];
+            
+            container.innerHTML = popularPairs.map(pair => {
+                const rate = calculateRate(pair.from, pair.to);
+                return `
+                    <div class="rate-item">
+                        <span class="rate-currency">${pair.from}/${pair.to}</span>
+                        <span class="rate-value">${rate.toFixed(4)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Calcular taxa entre duas moedas
+        function calculateRate(from, to) {
+            if (!exchangeRates[from] || !exchangeRates[to]) return 0;
+            return exchangeRates[to] / exchangeRates[from];
+        }
+
+        // Converter moeda
+        function convertCurrency() {
+            const fromAmount = parseFloat(document.getElementById('fromAmount').value) || 0;
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+            const toAmountInput = document.getElementById('toAmount');
+            const result = document.getElementById('result');
+
+            if (fromAmount === 0) {
+                toAmountInput.value = '';
+                result.classList.remove('show');
+                return;
+            }
+
+            const rate = calculateRate(fromCurrency, toCurrency);
+            const convertedAmount = fromAmount * rate;
+
+            toAmountInput.value = convertedAmount.toFixed(2);
+
+            result.innerHTML = `
+                <div class="result-amount">
+                    ${formatCurrency(convertedAmount, toCurrency)} ${toCurrency}
+                </div>
+                <div class="result-rate">
+                    1 ${fromCurrency} = ${rate.toFixed(4)} ${toCurrency}
+                </div>
+            `;
+            result.classList.add('show');
+        }
+
+        // Formatar moeda
+        function formatCurrency(amount, currency) {
+            const locale = getLocaleForLanguage(currentLanguage);
+            
+            return new Intl.NumberFormat(locale, {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        // Trocar moedas
+        function swapCurrencies() {
+            const fromCurrency = document.getElementById('fromCurrency');
+            const toCurrency = document.getElementById('toCurrency');
+            const fromAmount = document.getElementById('fromAmount');
+            const toAmount = document.getElementById('toAmount');
+
+            const tempCurrency = fromCurrency.value;
+            fromCurrency.value = toCurrency.value;
+            toCurrency.value = tempCurrency;
+
+            if (toAmount.value) {
+                fromAmount.value = toAmount.value;
+            }
+            
+            convertCurrency();
+        }
+
+        // Atualizar horário local
+        function updateLocalTime() {
+            const localTimeElement = document.getElementById('localTime');
+            const timeZone = timeZones[currentLanguage];
+            
+            if (!timeZone) return;
+            
+            try {
+                const now = new Date();
+                const locale = getLocaleForLanguage(currentLanguage);
+                const localTime = new Intl.DateTimeFormat(locale, {
+                    timeZone: timeZone.zone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                }).format(now);
+                
+                const countryName = getCountryName(currentLanguage);
+                localTimeElement.innerHTML = `🕐 ${countryName}: ${localTime}`;
+                
+            } catch (err) {
+                console.error('Erro ao atualizar horário:', err);
+                localTimeElement.innerHTML = '🕐 Horário: Não disponível';
+            }
+        }
+
+        // Iniciar atualização de horário
+        function startTimeUpdate() {
+            if (timeInterval) clearInterval(timeInterval);
+            timeInterval = setInterval(updateLocalTime, 1000);
+        }
+
+        // Parar atualização de horário
+        function stopTimeUpdate() {
+            if (timeInterval) {
+                clearInterval(timeInterval);
+                timeInterval = null;
+            }
+        }
+
+        // Obter locale para idioma
+        function getLocaleForLanguage(lang) {
+            const localeMap = {
+                'pt': 'pt-BR', 'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE',
+                'it': 'it-IT', 'ja': 'ja-JP', 'zh': 'zh-CN', 'ru': 'ru-RU', 'ar': 'ar-SA'
+            };
+            return localeMap[lang] || 'pt-BR';
+        }
+
+        // Obter nome do país no idioma atual
+        function getCountryName(lang) {
+            const countryNames = {
+                'pt': { 'pt': 'Brasil', 'en': 'Estados Unidos', 'es': 'Espanha', 'fr': 'França', 'de': 'Alemanha', 'it': 'Itália', 'ja': 'Japão', 'zh': 'China', 'ru': 'Rússia', 'ar': 'Arábia Saudita' },
+                'en': { 'pt': 'Brazil', 'en': 'United States', 'es': 'Spain', 'fr': 'France', 'de': 'Germany', 'it': 'Italy', 'ja': 'Japan', 'zh': 'China', 'ru': 'Russia', 'ar': 'Saudi Arabia' },
+                'es': { 'pt': 'Brasil', 'en': 'Estados Unidos', 'es': 'España', 'fr': 'Francia', 'de': 'Alemania', 'it': 'Italia', 'ja': 'Japón', 'zh': 'China', 'ru': 'Rusia', 'ar': 'Arabia Saudita' },
+                'fr': { 'pt': 'Brésil', 'en': 'États-Unis', 'es': 'Espagne', 'fr': 'France', 'de': 'Allemagne', 'it': 'Italie', 'ja': 'Japon', 'zh': 'Chine', 'ru': 'Russie', 'ar': 'Arabie Saoudite' },
+                'de': { 'pt': 'Brasilien', 'en': 'Vereinigte Staaten', 'es': 'Spanien', 'fr': 'Frankreich', 'de': 'Deutschland', 'it': 'Italien', 'ja': 'Japan', 'zh': 'China', 'ru': 'Russland', 'ar': 'Saudi-Arabien' },
+                'it': { 'pt': 'Brasile', 'en': 'Stati Uniti', 'es': 'Spagna', 'fr': 'Francia', 'de': 'Germania', 'it': 'Italia', 'ja': 'Giappone', 'zh': 'Cina', 'ru': 'Russia', 'ar': 'Arabia Saudita' },
+                'ja': { 'pt': 'ブラジル', 'en': 'アメリカ合衆国', 'es': 'スペイン', 'fr': 'フランス', 'de': 'ドイツ', 'it': 'イタリア', 'ja': '日本', 'zh': '中国', 'ru': 'ロシア', 'ar': 'サウジアラビア' },
+                'zh': { 'pt': '巴西', 'en': '美国', 'es': '西班牙', 'fr': '法国', 'de': '德国', 'it': '意大利', 'ja': '日本', 'zh': '中国', 'ru': '俄罗斯', 'ar': '沙特阿拉伯' },
+                'ru': { 'pt': 'Бразилия', 'en': 'Соединенные Штаты', 'es': 'Испания', 'fr': 'Франция', 'de': 'Германия', 'it': 'Италия', 'ja': 'Япония', 'zh': 'Китай', 'ru': 'Россия', 'ar': 'Саудовская Аравия' },
+                'ar': { 'pt': 'البرازيل', 'en': 'الولايات المتحدة', 'es': 'إسبانيا', 'fr': 'فرنسا', 'de': 'ألمانيا', 'it': 'إيطاليا', 'ja': 'اليابان', 'zh': 'الصين', 'ru': 'روسيا', 'ar': 'المملكة العربية السعودية' }
+            };
+            
+            return countryNames[currentLanguage]?.[lang] || timeZones[lang]?.country || 'País';
+        }
+
+        // Traduções
+        const translations = {
+            pt: {
+                mainTitle: "Conversor de Moedas Profissional",
+                mainSubtitle: "com cotações em tempo real",
+                labelFrom: "De", labelTo: "Para",
+                statusConnected: "Conectado - Tempo real",
+                statusAlt: "Conectado - API alternativa",
+                statusOffline: "Modo offline",
+                statusUpdating: "Atualizando cotações...",
+                lastUpdate: "Última atualização",
+                loading: "Carregando cotações...",
+                errorOffline: "⚠️ Usando cotações aproximadas. Verifique a conexão para dados em tempo real.",
+                popularTitle: "📊 Cotações Populares",
+                statusTitle: "⚡ Status",
+                currencies: {
+                    'BRL': 'BRL - Real Brasileiro', 'USD': 'USD - Dólar Americano', 'EUR': 'EUR - Euro',
+                    'GBP': 'GBP - Libra Esterlina', 'JPY': 'JPY - Iene Japonês', 'CAD': 'CAD - Dólar Canadense',
+                    'AUD': 'AUD - Dólar Australiano', 'CHF': 'CHF - Franco Suíço', 'CNY': 'CNY - Yuan Chinês', 'ARS': 'ARS - Peso Argentino'
+                }
+            },
+            en: {
+                mainTitle: "Professional Currency Converter",
+                mainSubtitle: "with real-time quotes",
+                labelFrom: "From", labelTo: "To",
+                statusConnected: "Connected - Real time",
+                statusAlt: "Connected - Alternative API",
+                statusOffline: "Offline mode",
+                statusUpdating: "Updating quotes...",
+                lastUpdate: "Last update",
+                loading: "Loading quotes...",
+                errorOffline: "⚠️ Using approximate quotes. Check your connection for real-time data.",
+                popularTitle: "📊 Popular Quotes",
+                statusTitle: "⚡ Status",
+                currencies: {
+                    'BRL': 'BRL - Brazilian Real', 'USD': 'USD - US Dollar', 'EUR': 'EUR - Euro',
+                    'GBP': 'GBP - British Pound', 'JPY': 'JPY - Japanese Yen', 'CAD': 'CAD - Canadian Dollar',
+                    'AUD': 'AUD - Australian Dollar', 'CHF': 'CHF - Swiss Franc', 'CNY': 'CNY - Chinese Yuan', 'ARS': 'ARS - Argentine Peso'
+                }
+            },
+            es: {
+                mainTitle: "Conversor de Divisas Profesional",
+                mainSubtitle: "con cotizaciones en tiempo real",
+                labelFrom: "De", labelTo: "Para",
+                statusConnected: "Conectado - Tiempo real",
+                statusAlt: "Conectado - API alternativa",
+                statusOffline: "Modo sin conexión",
+                statusUpdating: "Actualizando cotizaciones...",
+                lastUpdate: "Última actualización",
+                loading: "Cargando cotizaciones...",
+                errorOffline: "⚠️ Usando cotizaciones aproximadas. Verifique la conexión para datos en tiempo real.",
+                popularTitle: "📊 Cotizaciones Populares",
+                statusTitle: "⚡ Estado",
+                currencies: {
+                    'BRL': 'BRL - Real Brasileño', 'USD': 'USD - Dólar Americano', 'EUR': 'EUR - Euro',
+                    'GBP': 'GBP - Libra Esterlina', 'JPY': 'JPY - Yen Japonés', 'CAD': 'CAD - Dólar Canadiense',
+                    'AUD': 'AUD - Dólar Australiano', 'CHF': 'CHF - Franco Suizo', 'CNY': 'CNY - Yuan Chino', 'ARS': 'ARS - Peso Argentino'
+                }
+            },
+            fr: {
+                mainTitle: "Convertisseur de Devises Professionnel",
+                mainSubtitle: "avec des taux en temps réel",
+                labelFrom: "De", labelTo: "À",
+                statusConnected: "Connecté - Temps réel",
+                statusAlt: "Connecté - API alternative",
+                statusOffline: "Mode hors ligne",
+                statusUpdating: "Mise à jour des taux...",
+                lastUpdate: "Dernière mise à jour",
+                loading: "Chargement des taux...",
+                errorOffline: "⚠️ Utilisation de taux approximatifs. Vérifiez la connexion pour les données en temps réel.",
+                popularTitle: "📊 Taux Populaires",
+                statusTitle: "⚡ Statut",
+                currencies: {
+                    'BRL': 'BRL - Real Brésilien', 'USD': 'USD - Dollar Américain', 'EUR': 'EUR - Euro',
+                    'GBP': 'GBP - Livre Sterling', 'JPY': 'JPY - Yen Japonais', 'CAD': 'CAD - Dollar Canadien',
+                    'AUD': 'AUD - Dollar Australien', 'CHF': 'CHF - Franc Suisse', 'CNY': 'CNY - Yuan Chinois', 'ARS': 'ARS - Peso Argentin'
+                }
+            },
+            de: {
+                mainTitle: "Professioneller Währungsumrechner",
+                mainSubtitle: "mit Echtzeitkursen",
+                labelFrom: "Von", labelTo: "Nach",
+                statusConnected: "Verbunden - Echtzeit",
+                statusAlt: "Verbunden - Alternative API",
+                statusOffline: "Offline-Modus",
+                statusUpdating: "Aktualisiere Kurse...",
+                lastUpdate: "Letzte Aktualisierung",
+                loading: "Lade Kurse...",
+                errorOffline: "⚠️ Verwende ungefähre Kurse. Überprüfen Sie die Verbindung für Echtzeitdaten.",
+                popularTitle: "📊 Beliebte Kurse",
+                statusTitle: "⚡ Status",
+                currencies: {
+                    'BRL': 'BRL - Brasilianischer Real', 'USD': 'USD - US-Dollar', 'EUR': 'EUR - Euro',
+                    'GBP': 'GBP - Britisches Pfund', 'JPY': 'JPY - Japanischer Yen', 'CAD': 'CAD - Kanadischer Dollar',
+                    'AUD': 'AUD - Australischer Dollar', 'CHF': 'CHF - Schweizer Franken', 'CNY': 'CNY - Chinesischer Yuan', 'ARS': 'ARS - Argentinischer Peso'
+                }
+            },
+            it: {
+                mainTitle: "Convertitore di Valute Professionale",
+                mainSubtitle: "con tassi in tempo reale",
+                labelFrom: "Da", labelTo: "A",
+                statusConnected: "Connesso - Tempo reale",
+                statusAlt: "Connesso - API alternativa",
+                statusOffline: "Modalità offline",
+                statusUpdating: "Aggiornamento tassi...",
+                lastUpdate: "Ultimo aggiornamento",
+                loading: "Caricamento tassi...",
+                errorOffline: "⚠️ Utilizzo di tassi approssimativi. Controlla la connessione per i dati in tempo reale.",
+                popularTitle: "📊 Tassi Popolari",
+                statusTitle: "⚡ Stato",
+                currencies: {
+                    'BRL': 'BRL - Real Brasiliano', 'USD': 'USD - Dollaro Americano', 'EUR': 'EUR - Euro',
+                    'GBP': 'GBP - Sterlina Britannica', 'JPY': 'JPY - Yen Giapponese', 'CAD': 'CAD - Dollaro Canadese',
+                    'AUD': 'AUD - Dollaro Australiano', 'CHF': 'CHF - Franco Svizzero', 'CNY': 'CNY - Yuan Cinese', 'ARS': 'ARS - Peso Argentino'
+                }
+            },
+            ja: {
+                mainTitle: "プロフェッショナル通貨コンバーター",
+                mainSubtitle: "リアルタイム為替レート",
+                labelFrom: "から", labelTo: "へ",
+                statusConnected: "接続中 - リアルタイム",
+                statusAlt: "接続中 - 代替API",
+                statusOffline: "オフラインモード",
+                statusUpdating: "為替レートを更新中...",
+                lastUpdate: "最終更新",
+                loading: "為替レートを読み込み中...",
+                errorOffline: "⚠️ おおよその為替レートを使用しています。リアルタイムデータのために接続を確認してください。",
+                popularTitle: "📊 人気の為替レート",
+                statusTitle: "⚡ ステータス",
+                currencies: {
+                    'BRL': 'BRL - ブラジルレアル', 'USD': 'USD - アメリカドル', 'EUR': 'EUR - ユーロ',
+                    'GBP': 'GBP - イギリスポンド', 'JPY': 'JPY - 日本円', 'CAD': 'CAD - カナダドル',
+                    'AUD': 'AUD - オーストラリアドル', 'CHF': 'CHF - スイスフラン', 'CNY': 'CNY - 中国元', 'ARS': 'ARS - アルゼンチンペソ'
+                }
+            },
+            zh: {
+                mainTitle: "专业货币转换器",
+                mainSubtitle: "实时汇率",
+                labelFrom: "从", labelTo: "到",
+                statusConnected: "已连接 - 实时",
+                statusAlt: "已连接 - 备用API",
+                statusOffline: "离线模式",
+                statusUpdating: "更新汇率中...",
+                lastUpdate: "最后更新",
+                loading: "加载汇率中...",
+                errorOffline: "⚠️ 使用近似汇率。请检查连接以获取实时数据。",
+                popularTitle: "📊 热门汇率",
+                statusTitle: "⚡ 状态",
+                currencies: {
+                    'BRL': 'BRL - 巴西雷亚尔', 'USD': 'USD - 美元', 'EUR': 'EUR - 欧元',
+                    'GBP': 'GBP - 英镑', 'JPY': 'JPY - 日元', 'CAD': 'CAD - 加拿大元',
+                    'AUD': 'AUD - 澳大利亚元', 'CHF': 'CHF - 瑞士法郎', 'CNY': 'CNY - 人民币', 'ARS': 'ARS - 阿根廷比索'
+                }
+            },
+            ru: {
+                mainTitle: "Профессиональный конвертер валют",
+                mainSubtitle: "с курсами в реальном времени",
+                labelFrom: "Из", labelTo: "В",
+                statusConnected: "Подключено - Реальное время",
+                statusAlt: "Подключено - Альтернативный API",
+                statusOffline: "Оффлайн режим",
+                statusUpdating: "Обновление курсов...",
+                lastUpdate: "Последнее обновление",
+                loading: "Загрузка курсов...",
+                errorOffline: "⚠️ Используются приблизительные курсы. Проверьте подключение для получения данных в реальном времени.",
+                popularTitle: "📊 Популярные курсы",
+                statusTitle: "⚡ Статус",
+                currencies: {
+                    'BRL': 'BRL - Бразильский реал', 'USD': 'USD - Доллар США', 'EUR': 'EUR - Евро',
+                    'GBP': 'GBP - Британский фунт', 'JPY': 'JPY - Японская иена', 'CAD': 'CAD - Канадский доллар',
+                    'AUD': 'AUD - Австралийский доллар', 'CHF': 'CHF - Швейцарский франк', 'CNY': 'CNY - Китайский юань', 'ARS': 'ARS - Аргентинское песо'
+                }
+            },
+            ar: {
+                mainTitle: "محول العملات الاحترافي",
+                mainSubtitle: "مع أسعار في الوقت الحقيقي",
+                labelFrom: "من", labelTo: "إلى",
+                statusConnected: "متصل - الوقت الحقيقي",
+                statusAlt: "متصل - واجهة برمجة التطبيقات البديلة",
+                statusOffline: "وضع عدم الاتصال",
+                statusUpdating: "تحديث الأسعار...",
+                lastUpdate: "آخر تحديث",
+                loading: "تحميل الأسعار...",
+                errorOffline: "⚠️ استخدام أسعار تقريبية. تحقق من الاتصال للحصول على بيانات في الوقت الحقيقي.",
+                popularTitle: "📊 أسعار شائعة",
+                statusTitle: "⚡ الحالة",
+                currencies: {
+                    'BRL': 'BRL - ريال برازيلي', 'USD': 'USD - دولار أمريكي', 'EUR': 'EUR - يورو',
+                    'GBP': 'GBP - جنيه إسترليني', 'JPY': 'JPY - ين ياباني', 'CAD': 'CAD - دولار كندي',
+                    'AUD': 'AUD - دولار أسترالي', 'CHF': 'CHF - فرنك سويسري', 'CNY': 'CNY - يوان صيني', 'ARS': 'ARS - بيزو أرجنتيني'
+                }
+            }
+            // Demais idiomas seguem o mesmo padrão...
+        };
+
+        // Definir idioma
+        function setLanguage(lang) {
+            const t = translations[lang] || translations.pt;
+
+            document.getElementById('mainTitle').textContent = t.mainTitle;
+            document.getElementById('mainSubtitle').textContent = t.mainSubtitle;
+            document.getElementById('labelFrom').textContent = t.labelFrom;
+            document.getElementById('labelTo').textContent = t.labelTo;
+            document.getElementById('popularTitle').textContent = t.popularTitle;
+            document.getElementById('statusTitle').textContent = t.statusTitle;
+            document.getElementById('loadingText').textContent = t.loading;
+
+            const langMap = {
+                pt:'pt-BR', en:'en-US', es:'es-ES', fr:'fr-FR', de:'de-DE',
+                it:'it-IT', ja:'ja-JP', zh:'zh-CN', ru:'ru-RU', ar:'ar-SA'
+            };
+            document.documentElement.lang = langMap[lang] || 'pt-BR';
+
+            updateCurrencyOptions();
+        }
+
+        // Atualizar opções de moedas
+        function updateCurrencyOptions() {
+            const fromCurrency = document.getElementById('fromCurrency');
+            const toCurrency = document.getElementById('toCurrency');
+            const currentFromValue = fromCurrency.value;
+            const currentToValue = toCurrency.value;
+            
+            const currencies = translations[currentLanguage]?.currencies || translations.pt.currencies;
+            
+            fromCurrency.innerHTML = '';
+            toCurrency.innerHTML = '';
+            
+            Object.entries(currencies).forEach(([code, name]) => {
+                fromCurrency.add(new Option(name, code));
+                toCurrency.add(new Option(name, code));
+            });
+            
+            fromCurrency.value = currentFromValue;
+            toCurrency.value = currentToValue;
+        }
+
+        // Iniciar atualizações automáticas
+        function startAutoUpdate() {
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    fetchExchangeRates();
+                }
+            }, 30000);
+        }
+
+        // Event listeners
+        document.getElementById('fromAmount').addEventListener('input', function() {
+            const error = document.getElementById('error');
+            if (parseFloat(this.value) < 0) {
+                error.textContent = "⚠️ Valor não pode ser negativo";
+                error.style.display = 'block';
+                this.value = 0;
+            } else {
+                error.style.display = 'none';
+            }
+            convertCurrency();
+        });
+
+        document.getElementById('fromCurrency').addEventListener('change', convertCurrency);
+        document.getElementById('toCurrency').addEventListener('change', convertCurrency);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                startTimeUpdate();
+                startAutoUpdate();
+            } else {
+                stopTimeUpdate();
+            }
+        });
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            const languageSelector = new LanguageSelector('languageSelector');
+            languageSelector.restoreSavedLanguage();
+
+            if (!translations[currentLanguage]) {
+                setLanguage('pt');
+            }
+
+            updateLocalTime();
+            startTimeUpdate();
+            updateCurrencyOptions();
+            fetchExchangeRates();
+            startAutoUpdate();
+        });
+    </script>
+</body>
+</html>
